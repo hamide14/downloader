@@ -1,0 +1,31 @@
+name: Downloader
+
+on:
+  push:
+
+jobs:
+  download:
+    runs-on: ubuntu-latest
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Read commit message
+        id: msg
+        run: |
+          echo "msg=$(git log -1 --pretty=%B)" >> $GITHUB_OUTPUT
+
+      - name: Download file
+        run: |
+          mkdir downloads
+          MSG="${{ steps.msg.outputs.msg }}"
+          URL=$(echo "$MSG" | sed 's/download: //')
+          wget -P downloads "$URL"
+
+      - name: Commit files
+        run: |
+          git config --global user.name github-actions
+          git config --global user.email github-actions@github.com
+          git add downloads
+          git commit -m "Add downloaded file" || echo "No changes"
+          git push
